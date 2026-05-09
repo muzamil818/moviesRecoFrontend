@@ -52,7 +52,11 @@ export const submitRating = async (data: {
 };
 
 // RECOMMENDATIONS
-export const getRecommendations = async (userId: number): Promise<any> => {
-  const res = await fetch(`${BASE_URL}/recommend/${userId}`);
+export const getRecommendations = async (userId: number) => {
+  const res = await fetch(`http://localhost:3001/recommend/${userId}`);
+  return res.json();
+};
+export const getUserRatings = async (userId: number) => {
+  const res = await fetch(`http://localhost:3001/ratings/${userId}`);
   return res.json();
 };

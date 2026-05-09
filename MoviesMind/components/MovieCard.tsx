@@ -10,9 +10,9 @@ type Movie = {
 type Props = {
   movie: Movie;
   onRate: (movieId: number, score: number) => void;
+ ratedScore?: number;
 };
-
-function MovieCard({ movie, onRate }: Props) {
+function MovieCard({ movie, onRate, ratedScore }: Props) {
   return (
     <div className="group bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:scale-105 transition-transform duration-300">
 
@@ -21,7 +21,7 @@ function MovieCard({ movie, onRate }: Props) {
         <img
           src={
             movie.PosterURL ||
-            "https://via.placeholder.com/300x450?text=No+Image"
+            "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
           }
           alt={movie.Title}
           className="w-full h-full object-cover"
@@ -30,15 +30,24 @@ function MovieCard({ movie, onRate }: Props) {
         {/* HOVER OVERLAY */}
         <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
           <div className="flex gap-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                onClick={() => onRate(movie.MovieID, star)}
-                className="text-white hover:text-red-500 text-xl"
-              >
-                ★
-              </button>
-            ))}
+                {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                        key={star}
+                        onClick={() => onRate(movie.MovieID, star)}
+                        className={
+                        star <= (ratedScore || 0)
+                            ? "text-red-500 text-xl"
+                            : "text-zinc-500 hover:text-red-500 text-xl"
+                        }
+                    >
+                        ★
+                    </button>
+        ))}
+        {ratedScore && (
+<p className="text-xs text-red-400 mt-2">
+You rated this ⭐ {ratedScore}
+</p>
+)}
           </div>
         </div>
       </div>

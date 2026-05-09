@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getMovies, submitRating } from "../api/api";
+import { getMovies, submitRating, getUserRatings } from "../api/api";
 import MovieCard from "../../components/MovieCard";
 
 type Movie = {
@@ -13,24 +13,40 @@ type Movie = {
 function Movies() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [ratedMovies, setRatedMovies] = useState<Record<number, number>>({});
 
   const userId = 1;
 
-  useEffect(() => {
-    const loadMovies = async () => {
-      try {
-        const data = await getMovies();
-        setMovies(data);
-      } catch (err) {
-        console.log(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // ✅ FIXED: correct function name
+useEffect(() => {
+  const loadData = async () => {
+    try {
+      const [moviesData, ratingsData] = await Promise.all([
+        getMovies(),
+        getUserRatings(userId),
+      ]);
 
-    loadMovies();
-  }, []);
+      setMovies(moviesData);
 
+      // convert ratings into map
+      const ratedMap: Record<number, number> = {};
+
+      ratingsData.forEach((r: any) => {
+        ratedMap[r.MovieID] = r.Score;
+      });
+
+      setRatedMovies(ratedMap);
+
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadData();
+}, []);
+  // RATE MOVIE
   const handleRating = async (movieId: number, score: number) => {
     try {
       await submitRating({
@@ -38,6 +54,18 @@ function Movies() {
         MovieID: movieId,
         Score: score,
       });
+
+      setRatedMovies((prev) => ({
+        ...prev,
+        [movieId]: score,
+      }));
+
+      // optional refresh trigger (if you still use recommendations page)
+      localStorage.setItem(
+        "recommendationRefresh",
+        Date.now().toString()
+      );
+
     } catch (err) {
       console.log(err);
     }
@@ -61,6 +89,7 @@ function Movies() {
             key={movie.MovieID}
             movie={movie}
             onRate={handleRating}
+            ratedScore={ratedMovies[movie.MovieID]}
           />
         ))}
 

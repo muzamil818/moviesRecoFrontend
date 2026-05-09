@@ -1,103 +1,87 @@
 import { useEffect, useState } from "react";
 import { getRecommendations } from "../api/api";
+import MovieCard from "../../components/MovieCard";
 
-// TYPE for recommendation item
-type Recommendation = {
+type Movie = {
   MovieID: number;
   Title: string;
   ReleaseYear: number;
-  AvgRating?: number;
   Genres?: string;
-  RecommendationReason?: string;
+  AvgRating?: number;
+  PosterURL?: string | null;
 };
 
 function Recommendations() {
-  const [movies, setMovies] = useState<Recommendation[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // temporary user (we will connect Home page later)
-  const userId: number = 1;
+  // ✅ GET USER FROM LOCALSTORAGE (FIX)
+  const userId = localStorage.getItem("userId");
 
-  useEffect(() => {
-    fetchRecommendations();
-  }, []);
-
-  const fetchRecommendations = async (): Promise<void> => {
+useEffect(() => {
+  const fetchRecommendations = async () => {
     try {
-      const data = await getRecommendations(userId);
-      setMovies(data.recommendations || []);
-    } catch (error) {
-      console.log("Error fetching recommendations:", error);
+      if (!userId) return;
+
+      const data = await getRecommendations(Number(userId));
+      setMovies(data.recommendations || data);
+    } catch (err) {
+      console.log(err);
     } finally {
       setLoading(false);
     }
   };
 
+  fetchRecommendations();
+
+  // 🔥 LISTEN FOR CHANGES
+  const interval = setInterval(() => {
+    const refreshFlag = localStorage.getItem("refreshRecommendations");
+
+    if (refreshFlag) {
+      fetchRecommendations();
+      localStorage.removeItem("refreshRecommendations");
+    }
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [userId]);
+  // LOADING STATE
   if (loading) {
     return (
-      <div className="text-white text-center mt-10">
+      <p className="text-white text-center mt-10">
         Loading recommendations...
-      </div>
+      </p>
+    );
+  }
+
+  // NO USER SELECTED
+  if (!userId) {
+    return (
+      <p className="text-white text-center mt-10">
+        Please select a user first
+      </p>
     );
   }
 
   return (
     <div className="min-h-screen bg-black px-6 py-10">
 
-      <h1 className="text-3xl font-bold text-white mb-2">
-        Recommended for You
+      <h1 className="text-3xl font-bold text-white mb-8">
+        Recommended for You 🎯
       </h1>
 
-      <p className="text-zinc-500 mb-8">
-        Based on your ratings & preferences
-      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
-      {movies.length === 0 ? (
-        <p className="text-zinc-400">
-          No recommendations yet. Rate more movies.
-        </p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {movies.map((movie) => (
+          <MovieCard
+            key={movie.MovieID}
+            movie={movie}
+            onRate={() => {}}
+          />
+        ))}
 
-          {movies.map((movie) => (
-            <div
-              key={movie.MovieID}
-              className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 hover:scale-105 transition-transform duration-300"
-            >
-
-              {/* Title */}
-              <h2 className="text-white text-lg font-semibold">
-                {movie.Title}
-              </h2>
-
-              <p className="text-zinc-400 text-sm">
-                {movie.ReleaseYear}
-              </p>
-
-              {/* Genres */}
-              <p className="text-zinc-500 text-xs mt-1">
-                {movie.Genres}
-              </p>
-
-              {/* Rating */}
-              <p className="text-yellow-400 mt-2">
-                ⭐ {movie.AvgRating ?? "No rating"}
-              </p>
-
-              {/* Reason (IMPORTANT - shows intelligence) */}
-              {movie.RecommendationReason && (
-                <p className="text-red-500 text-xs mt-2">
-                  {movie.RecommendationReason === "genre"
-                    ? "🎯 Based on your favorite genres"
-                    : "🔥 Top rated movie"}
-                </p>
-              )}
-
-            </div>
-          ))}
-
-        </div>
-      )}
+      </div>
 
     </div>
   );
